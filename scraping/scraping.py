@@ -36,7 +36,13 @@ import pymysql
 URL = 'https://intranet.dga.or.th/mis/MeetingRoom/scripts/ShowDetail.asp'
 
 # timeout to query
-timeout = 5
+timeout = 10
+
+SQL_HOST = "127.0.0.1"
+SQL_USER = "root"
+SQL_PASS = "Acho20mkr"
+SQL_DB = "remebot"
+SQL_MEETING_ROOM_TB = "meetingroom"
 
 
 def getURL(ID):
@@ -54,7 +60,7 @@ def scrap(url):
         return data
     except urllib.error.HTTPError as e:
         print(e)
-        return ""
+        return None
 
 
 def cleanUp(data):
@@ -143,13 +149,11 @@ def decode(data):
 
 
 def saveToDatabase(record):
-
-    db = pymysql.connect("127.0.0.1", "root", "Acho20mkr", "remebot")
+    ret = 0
+    db = pymysql.connect(SQL_HOST, SQL_USER, SQL_PASS, SQL_DB)
     cursor = db.cursor()
 
-    #sql = """SELECT * FROM remebot.MeetingRoom;"""
-
-    sql = f"INSERT INTO remebot.MeetingRoom(id, room, meeting_begin, meeting_end, reserver, internal_tel, division, agenda) values({record['id']}, {record['room']}, \"{record['meeting_begin']}\", \"{record['meeting_end']}\", \"{record['reserver']}\", {record['internal_tel']}, \"{record['division']}\", \"{record['agenda']}\")"
+    sql = f"INSERT INTO remebot.MeetingRoom(id, room, meeting_begin, meeting_end, reserver, internal_tel, division, agenda) values({record['id']}, \"{record['room']}\", \"{record['meeting_begin']}\", \"{record['meeting_end']}\", \"{record['reserver']}\", \"{record['internal_tel']}\", \"{record['division']}\", \"{record['agenda']}\")"
 
     print(sql)
     try:
@@ -158,21 +162,64 @@ def saveToDatabase(record):
     except pymysql.DatabaseError as e:
         print(f"SQL Error: {e}")
         db.rollback()
+        ret = -1
     db.close()
+    return ret
 
 
-ID = 44729  # the last reserved
-data = scrap(getURL(ID))
-body = getHTTPBody(data)
-contents = decode(body)
-record = {"id": ID,
-          "room": contents[2].split(" ", 1)[0],
-          "meeting_begin": getStartTime(contents[4]).isoformat(),
-          "meeting_end": getEndTime(contents[4]).isoformat(),
-          "reserver": contents[6],
-          "internal_tel": contents[8],
-          "division": contents[10],
-          "agenda": contents[12]
-          }
-print(record)
-saveToDatabase(record)
+def getLastReserved():
+    db = pymysql.connect(SQL_HOST, SQL_USER, SQL_PASS, SQL_DB)
+    cursor = db.cursor()
+
+    sql = f"SELECT MAX(id) as lastone FROM remebot.MeetingRoom"
+    print(sql)
+    lastOne = None
+    try:
+        cursor.execute(sql)
+        data = cursor.fetchone()
+        if data != None:
+            lastOne = data[0]
+    except pymysql.DatabaseError as e:
+        print(f"SQL Error: {e}")
+    db.close()
+    return lastOne
+
+
+ID = getLastReserved()  # the last reserved
+print(ID)
+
+if ID == None or ID < 40700:
+    ID = 40700
+else:
+    ID += 1  # next one
+
+limit = 0
+
+while limit < 10:
+
+    #print("========= Scraping =======")
+    print("ID: " + str(ID))
+
+    data = scrap(getURL(ID))
+    if data == None:
+        print("Warning: Something went wrong on ID : " + str(ID))
+        ID += 1
+        continue
+
+    body = getHTTPBody(data)
+    contents = decode(body)
+    record = {"id": ID,
+              "room": contents[2].split(" ", 1)[0],
+              "meeting_begin": getStartTime(contents[4]).isoformat(),
+              "meeting_end": getEndTime(contents[4]).isoformat(),
+              "reserver": contents[6],
+              "internal_tel": contents[8],
+              "division": contents[10],
+              "agenda": contents[12].replace('"', "")
+              }
+    print(record)
+    if saveToDatabase(record) != 0:
+        break
+    ID += 1
+    limit += 1
+    print(f"Finished: " + str(ID))
