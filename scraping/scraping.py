@@ -36,7 +36,10 @@ import pymysql
 URL = 'https://intranet.dga.or.th/mis/MeetingRoom/scripts/ShowDetail.asp'
 
 # timeout to query
-timeout = 10
+timeout = 20
+
+# Limit Request
+limitRequest = 100
 
 SQL_HOST = "127.0.0.1"
 SQL_USER = "root"
@@ -64,7 +67,7 @@ def scrap(url):
 
 
 def cleanUp(data):
-    data = data.decode("tis-620")
+    data = data.decode("tis-620", 'ignore')
     data = data.replace("&nbsp;", "")
     data = data.replace("<BR>", "")
     return data
@@ -188,14 +191,14 @@ def getLastReserved():
 ID = getLastReserved()  # the last reserved
 print(ID)
 
-if ID == None or ID < 40700:
-    ID = 40700
+if ID == None or ID < 44700:
+    ID = 44700
 else:
     ID += 1  # next one
 
 limit = 0
 
-while limit < 10:
+while limit < limitRequest:
 
     #print("========= Scraping =======")
     print("ID: " + str(ID))
