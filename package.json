@@ -1,0 +1,22 @@
+{
+  "name": "remebot",
+  "version": "1.0.0",
+  "description": "Provides services to checking available meeting room",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pepsi7959/ReMeBot.git"
+  },
+  "keywords": [
+    "chatbot"
+  ],
+  "author": "Narongsak Mala <Narongsak.mala@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/pepsi7959/ReMeBot/issues"
+  },
+  "homepage": "https://github.com/pepsi7959/ReMeBot#readme"
+}
