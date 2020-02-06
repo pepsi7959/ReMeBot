@@ -4,6 +4,7 @@
   "description": "Provides services to checking available meeting room",
   "main": "index.js",
   "scripts": {
+    "start": " node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -18,5 +19,17 @@
   "bugs": {
     "url": "https://github.com/pepsi7959/ReMeBot/issues"
   },
-  "homepage": "https://github.com/pepsi7959/ReMeBot#readme"
+  "homepage": "https://github.com/pepsi7959/ReMeBot#readme",
+  "dependencies": {
+    "actions-on-google": "^2.12.0",
+    "body-parser": "^1.19.0",
+    "dialogflow": "^1.1.2",
+    "dialogflow-fulfillment": "^0.6.1",
+    "express": "^4.17.1",
+    "morgan": "^1.9.1",
+    "mysql": "^2.18.1",
+    "path": "^0.12.7",
+    "promise": "^8.0.3",
+    "winston": "^3.2.1"
+  }
 }
