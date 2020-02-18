@@ -37,12 +37,13 @@ app.post('/', (req, res) => {
   console.log('locale: ' + agent.locale);
   console.log('query: ', agent.query);
   console.log('session: ', agent.session);
+  console.log('parameter: ', agent.parameters);
 
-  // Run the proper function handler based on the matched Dialogflow intent name
   let intentMap = new Map();
   intentMap.set('ไม่ให้จองแล้ว', meeting.notAvailableRoom);
   intentMap.set('check.available-room - yes', meeting.checkAvailableRoom);
   agent.handleRequest(intentMap);
+  
 });
 
 app.listen(port, () => {

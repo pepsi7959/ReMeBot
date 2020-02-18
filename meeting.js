@@ -28,12 +28,37 @@ function notAvailableRoom(agent) {
 }
 
 function checkAvailableRoom(agent) {
-    console.log(agent);
+
     var db = mysqlHelper.getConnection();
+    var now = new Date();
+
+    var startDate = new Date(agent.parameters.date);
+    var startTime = new Date(agent.parameters.time);
+    var startAt = new Date();
+    startAt.setDate(startDate.getDate);
+    startAt.setTime(startTime.getTime);
+
+    var duration = '2';
+    var endAt = startAt.setHours(startAt.getHours + duration);
+    var room = agent.parameters.room;
+
+    if ( startAt < now ) {
+        agent.add(randResponse(
+            ['ไม่ควรจองย้อนหลังป่าว', 'จองย้อนหลังไม่ได้ดิ']));
+        return;
+    }
+
+    var str_sql = 'select * from remebot.MeetingRoom where  meeting_begin >= ' + startAt.toISOString() + ' and meeting_begin < ' + endAt.toISOString() +
+        'and room = ' + room +' order by room, meeting_begin desc';
     db.then(conn => {
-        mysqlHelper.query(conn, "select * from remebot.MeetingRoom limit 2")
-        .then(result => {console.log(result)});
+
+        mysqlHelper.query(conn, str_sql)
+            .then(result => {
+                console.log(result);
+                conn.close();
+            });
     });
+
     agent.add("ว่างจ้า");
 }
 
