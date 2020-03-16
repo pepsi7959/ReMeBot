@@ -3,11 +3,28 @@ const {
     Payload
 } = require("dialogflow-fulfillment");
 const mysqlHelper = require('./helpers/mysqlHelper');
+const appConf = require('./config/production.conf');
+const winston = require('./common/logger');
+const promise = require("promise");
+const logger = winston.logger;
 
+/* sticker reference : https://developers.line.biz/media/messaging-api/sticker_list.pdf */
 var StickerPlayload = {
     type: "sticker",
     packageId: "11537",
     stickerId: "52002739"
+}
+
+function randStricker(stickers) {
+    var len = stickers.length;
+    var rand = Math.floor(Math.random() * 100);
+    var idx = rand % len;
+    console.log(idx, len, rand, stickers[idx])
+    StickerPlayload.packageId = stickers[idx].packageId;
+    StickerPlayload.stickerId = stickers[idx].stickerId;
+    return new Payload(`LINE`, StickerPlayload, {
+        sendAsMessage: true
+    });
 }
 
 function randResponse(response) {
@@ -34,34 +51,81 @@ function checkAvailableRoom(agent) {
 
     var startDate = new Date(agent.parameters.date);
     var startTime = new Date(agent.parameters.time);
-    var startAt = new Date();
-    startAt.setDate(startDate.getDate);
-    startAt.setTime(startTime.getTime);
 
-    var duration = '2';
-    var endAt = startAt.setHours(startAt.getHours + duration);
+    console.log("startDate", startDate);
+    console.log("startTime", startTime);
+
+    var duration = 2;
+    var startAt = new Date(agent.parameters.date);
+    var endAt = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), (startTime.getHours() + duration), startTime.getMinutes(), 0);
+
+
+    console.log("startAt.getHours(): ", startTime.getHours());
+
     var room = agent.parameters.room;
 
-    if ( startAt < now ) {
+    console.log("now: " + now);
+
+    if (startAt < now) {
         agent.add(randResponse(
             ['ไม่ควรจองย้อนหลังป่าว', 'จองย้อนหลังไม่ได้ดิ']));
         return;
     }
 
-    var str_sql = 'select * from remebot.MeetingRoom where  meeting_begin >= ' + startAt.toISOString() + ' and meeting_begin < ' + endAt.toISOString() +
-        'and room = ' + room +' order by room, meeting_begin desc';
-    db.then(conn => {
+    console.log("start: " + startAt);
+    console.log("  end: " + endAt);
 
-        mysqlHelper.query(conn, str_sql)
-            .then(result => {
-                console.log(result);
-                conn.close();
-            });
+    var rooms = room.split(" ");
+    var room_number = rooms[1] || "";
+
+    var qtr_start = startAt.getFullYear() + '-' + (startAt.getMonth() + 1) + '-' + startAt.getDate() + '  ' + startAt.getHours() + ":" + startAt.getMinutes() + ":00";
+    var qtr_end = endAt.getFullYear() + '-' + (endAt.getMonth() + 1) + '-' + endAt.getDate() + '  ' + endAt.getHours() + ":" + endAt.getMinutes() + ":00";
+    var str_sql = 'select * from remebot.MeetingRoom where  meeting_end > \'' + qtr_start + '\' and meeting_begin < \'' + qtr_end +
+        '\' and room = \'' + room_number + '\' order by room, meeting_begin desc';
+
+    console.log("query:: " + str_sql);
+
+    /** fixed some error by https://codepen.io/siddajmera/pen/eraNLW?editors=0010 */
+    return db.then(conn => {
+        return mysqlHelper.query(conn, str_sql).then(result => {
+            logger.debug(JSON.stringify(result));
+            if (result.length >= 1) {
+                var str = 'คุณ' + result[0].reserver + ' ได้จองห้อง ' + result[0].room + ' แล้ว';
+                agent.add(str);
+
+                StickerPlayload.stickerId = "52114110";
+                StickerPlayload.packageId = "11539";
+
+                agent.add(randStricker([{
+                        stickerId: "52114110",
+                        packageId: "11539"
+                    },
+                    {
+                        stickerId: "52002739",
+                        packageId: "11537"
+                    }
+                ]));
+            } else {
+                agent.add("ว่างจ้า รีบจองเลย");
+                agent.add(randStricker([{
+                    stickerId: "52002734",
+                    packageId: "11537"
+                },
+                {
+                    stickerId: "51626494",
+                    packageId: "11538"
+                },
+                {
+                    stickerId: "52114146",
+                    packageId: "11539"
+                }
+            ]));
+            }
+            return Promise.resolve(agent);
+        });
     });
 
-    agent.add("ว่างจ้า");
 }
-
 exports.default = {
     notAvailableRoom,
     checkAvailableRoom
