@@ -30,10 +30,11 @@ import urllib.request
 import xml.etree.ElementTree as ET
 import datetime
 import pymysql
+import sys
 
 # Global Configuration
 # URL to scrap the data
-URL = 'https://intranet.dga.or.th/mis/MeetingRoom/scripts/ShowDetail.asp'
+URL = None
 
 # timeout to query
 timeout = 20
@@ -159,6 +160,7 @@ def saveToDatabase(record):
     sql = f"INSERT INTO remebot.MeetingRoom(id, room, meeting_begin, meeting_end, reserver, internal_tel, division, agenda) values({record['id']}, \"{record['room']}\", \"{record['meeting_begin']}\", \"{record['meeting_end']}\", \"{record['reserver']}\", \"{record['internal_tel']}\", \"{record['division']}\", \"{record['agenda']}\")"
 
     print(sql)
+
     try:
         cursor.execute(sql)
         db.commit()
@@ -188,41 +190,51 @@ def getLastReserved():
     return lastOne
 
 
-ID = getLastReserved()  # the last reserved
-print(ID)
+if __name__ == '__main__':
 
-if ID == None or ID < 44700:
-    ID = 44700
-else:
-    ID += 1  # next one
+    if len(sys.argv) != 2:
+        print("Please insert URL to query")
+        exit(1)
 
-limit = 0
+    URL = str(sys.argv[1])
 
-while limit < limitRequest:
+    print("URL : " + URL)
 
-    #print("========= Scraping =======")
-    print("ID: " + str(ID))
+    ID = getLastReserved()  # the last reserved
+    print(ID)
 
-    data = scrap(getURL(ID))
-    if data == None:
-        print("Warning: Something went wrong on ID : " + str(ID))
+    if ID == None or ID < 44700:
+        ID = 44700
+    else:
+        ID += 1  # next one
+
+    limit = 0
+
+    while limit < limitRequest:
+
+        #print("========= Scraping =======")
+        print("ID: " + str(ID))
+
+        data = scrap(getURL(ID))
+        if data == None:
+            print("Warning: Something went wrong on ID : " + str(ID))
+            ID += 1
+            continue
+
+        body = getHTTPBody(data)
+        contents = decode(body)
+        record = {"id": ID,
+                "room": contents[2].split(" ", 1)[0],
+                "meeting_begin": getStartTime(contents[4]).isoformat(),
+                "meeting_end": getEndTime(contents[4]).isoformat(),
+                "reserver": contents[6],
+                "internal_tel": contents[8],
+                "division": contents[10],
+                "agenda": contents[12].replace('"', "")
+                }
+        print(record)
+        if saveToDatabase(record) != 0:
+            break
         ID += 1
-        continue
-
-    body = getHTTPBody(data)
-    contents = decode(body)
-    record = {"id": ID,
-              "room": contents[2].split(" ", 1)[0],
-              "meeting_begin": getStartTime(contents[4]).isoformat(),
-              "meeting_end": getEndTime(contents[4]).isoformat(),
-              "reserver": contents[6],
-              "internal_tel": contents[8],
-              "division": contents[10],
-              "agenda": contents[12].replace('"', "")
-              }
-    print(record)
-    if saveToDatabase(record) != 0:
-        break
-    ID += 1
-    limit += 1
-    print(f"Finished: " + str(ID))
+        limit += 1
+        print(f"Finished: " + str(ID))

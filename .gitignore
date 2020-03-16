@@ -1,0 +1,5 @@
+.vscode-upload.json
+package-lock.json
+application.log
+scraping/scraping.conf
+node_modules/
