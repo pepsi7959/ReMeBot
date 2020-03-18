@@ -81,7 +81,7 @@ function checkAvailableRoom(agent) {
     var qtr_start = startAt.getFullYear() + '-' + (startAt.getMonth() + 1) + '-' + startAt.getDate() + '  ' + startAt.getHours() + ":" + startAt.getMinutes() + ":00";
     var qtr_end = endAt.getFullYear() + '-' + (endAt.getMonth() + 1) + '-' + endAt.getDate() + '  ' + endAt.getHours() + ":" + endAt.getMinutes() + ":00";
     var str_sql = 'select * from remebot.MeetingRoom where  meeting_end > \'' + qtr_start + '\' and meeting_begin < \'' + qtr_end +
-        '\' and room = \'' + room_number + '\' order by room, meeting_begin desc';
+        '\' and room = \'' + room_number + '\' order by room, meeting_begin asc';
 
     console.log("query:: " + str_sql);
 
