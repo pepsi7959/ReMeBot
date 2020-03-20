@@ -3,3 +3,4 @@ package-lock.json
 application.log
 scraping/scraping.conf
 node_modules/
+production.conf.js
