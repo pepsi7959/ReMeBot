@@ -56,7 +56,7 @@ function checkAvailableRoom(agent) {
     console.log("startTime", startTime);
 
     var duration = 2;
-    var startAt = new Date(agent.parameters.date);
+    var startAt = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), startTime.getHours(), startTime.getMinutes(), 0);
     var endAt = new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate(), (startTime.getHours() + duration), startTime.getMinutes(), 0);
 
 
@@ -66,10 +66,9 @@ function checkAvailableRoom(agent) {
 
     console.log("now: " + now);
 
-    if (startAt < now) {
+    if (now - startAt > 0) {
         agent.add(randResponse(
-            ['ไม่ควรจองย้อนหลังป่าว', 'จองย้อนหลังไม่ได้ดิ']));
-        return;
+            ['คุณกำลังจองย้อนหลังอยู่นะ!!!']));
     }
 
     console.log("start: " + startAt);
